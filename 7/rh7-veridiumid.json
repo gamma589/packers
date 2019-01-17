@@ -1,0 +1,77 @@
+{  
+  "provisioners": [
+  {
+    "type": "ansible",
+    "playbook_file": "ansible/playbook.yml"
+  },
+  {
+    "type": "file",
+    "source": "http/one-context-5.6.0-1.el6.noarch.rpm",
+    "destination": "/tmp/one-context.deb"
+  },
+  {
+    "type": "shell",
+    "execute_command": "sudo -S -E bash '{{.Path}}'",
+    "script": "scripts/setup.sh"
+  }
+ ],
+  "builders":
+  [
+    {
+      "type": "qemu",
+      "accelerator": "kvm",
+      "headless": false,
+      "qemuargs": [
+        [ "-m", "2048M" ],
+        [ "-smp", "cpus=1,maxcpus=16,cores=4" ]
+      ],
+      "disk_interface": "virtio",
+      "disk_size": 32000,
+      "format": "qcow2",
+      "net_device": "virtio-net",
+      "iso_url": "/home/alexs/Documents/Software/ISO/rhel-server-7.6-x86_64-dvd.iso",
+      "iso_checksum": "7f0eb16e287e732af4046359184cf6f7",
+      "iso_checksum_type": "md5",
+
+      "vm_name": "rhel7-base.qcow2",
+      "output_directory": "rhel-base-img",
+
+      "http_directory": "http",
+      "http_port_min": 10089,
+      "http_port_max": 10089,
+
+      "ssh_host_port_min": 2222,
+      "ssh_host_port_max": 2229,
+
+      "ssh_username": "root",
+      "ssh_password": "changeME123",
+      "ssh_port": 22,
+      "ssh_wait_timeout": "1200s",
+
+      "boot_wait": "1s",
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/kickstart.cfg<enter><wait>"
+      ],
+
+      "shutdown_command": "shutdown -P now"
+    },
+    {
+      "access_key": "{{user `aws_access_key`}}",
+      "ami_name": "packer-linux-aws-demo-{{timestamp}}",
+      "instance_type": "t2.large",
+      "region": "us-east-1",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "source_ami_filter": {
+        "filters": {
+        "virtualization-type": "hvm",
+        "name": "rhel7-test-packer",
+        "root-device-type": "ebs"
+        },
+        "owners": ["xxxx"],
+        "most_recent": true
+      },
+      "ssh_username": "root",
+      "type": "amazon-ebs"
+  }
+  ]
+}
